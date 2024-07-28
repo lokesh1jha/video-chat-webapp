@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	w "videochat/pkg/webrtc"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -31,10 +32,23 @@ func RoomWebsocket(c *websocket.Conn) error {
 	}
 
 	_, _, room := createOrGetRoom(uuid)
-
+	w.RoomConn(c, room.Peer)
 	return room
 }
 
 func createOrGetRoom(uuid string) (string, string, Room) {
 
+}
+
+func RoomViewerWebsocket(c *websocket.Conn) {
+
+}
+
+func roomViewerConn(c *websocket.Conn, p *w.Peer) {
+
+}
+
+type websocketMessage struct {
+	Event string `json:"event"`
+	Data  string `josn: "data"`
 }
