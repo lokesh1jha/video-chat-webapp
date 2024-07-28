@@ -124,3 +124,53 @@ func roomViewerConn(c *websocket.Conn, p *w.Peer) {
 		}
 	}
 }
+
+
+func StreamwebSocket(c *websocket.Conn) error {
+	suuid := c.Params("ssuid")
+	if suuid == "" {
+		return
+	}
+	w.StreamLock.Lock()
+	if stream, ok := w.Stream[suuid]; ok {
+		w.StreamLock.Unlock()
+		StreamConn(c, stream)
+		return
+	}
+	w.StreamLock.Unlock()
+}
+
+func StreamViewerWebSocket(c *fiber.Ctx) error {
+	suuid := c.Params("ssuid")
+	if suuid == "" {
+		return
+	}
+	w.StreamLock.Lock()
+	if stream, ok := w.Stream[suuid]; ok {
+		w.StreamLock.Unlock()
+		viewerConn(c, stream)
+		return
+	}
+	w.StreamLock.Unlock()
+	return nil
+}
+
+func viewerConn(c websocket.Conn, p *w.Peers){
+	ticker := time.NewTicker(1 * time.Second)
+	defer func () {
+		ticker.Stop()
+		c.Close()
+	}()
+
+	for {
+		select {
+			case <-ticker.C:
+				w, err := c.Conn.NextWriter(websocket.TextMessage)
+				if err != nil {
+					return
+				}
+				w.Write([]byte(fmt.Sprintf("%d", len(p.Connection))))
+		}
+	}
+}
+
