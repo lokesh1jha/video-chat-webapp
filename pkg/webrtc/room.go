@@ -3,7 +3,7 @@ package webrtc
 import (
 	"log"
 	"sync"
-	"videochat/pkg/webrtc"
+	"videochat/pkg/webrtc/v2"
 
 	"github.com/gofiber/websocket/v2"
 )
@@ -15,12 +15,12 @@ func RoomConn(c *websocket.Conn, p *Peers) {
 
 	if err != nil {
 		log.Print(err)
-		return 
+		return
 	}
 	newPeer := PeerConnectionState{
 		PeerConnection: peerConnection,
-		websocket: &ThreadSafeWriter{}
-		Conn: c,
-		Mutex: sync.Mutex{}
+		websocket:      &ThreadSafeWriter{},
+		Conn:           c,
+		Mutex:          sync.Mutex{},
 	}
 }

@@ -44,7 +44,7 @@ func Run() error {
 
 	app.Get("/stream/:ssuid", handlers.Stream)
 	app.Get("/stream/:ssuid/websocket", websocket.new(handlers.Streamwebsocket, websocket.Config{
-		HandshakeTimeout: 10*time.Second,
+		HandshakeTimeout: 10 * time.Second,
 	}))
 	app.Get("/stream/:ssuid/chat/websocket", websocket.new(handler.StreamChatWebsocket))
 	app.Get("/stream/:ssuid/viewer/websocket", websocket.new(handler.StreamViewerWebsocket))
@@ -58,13 +58,11 @@ func Run() error {
 		return app.ListenTLS(*addr, *cert, *key)
 	}
 	return app.Listen(*addr)
-	
 
 }
 
-
-fun dispatchKeyFrames() {
-	for range time.NewTicker(time.Second*3).C {
+func dispatchKeyFrames() {
+	for range time.NewTicker(time.Second * 3).C {
 		for _, room := range w.Rooms {
 			room.Peers.DispatchKeyFrame()
 		}

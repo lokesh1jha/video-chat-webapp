@@ -3,7 +3,8 @@ package webrtc
 import (
 	"log"
 	"sync"
-	"videochat/pkg/webrtc"
+	"videochat/pkg/chat"
+	"videochat/pkg/webrtc/v2"
 
 	"github.com/gofiber/websocket"
 )
@@ -29,34 +30,33 @@ type ThreadSafeWriter struct {
 	Mutex sync.Mutex
 }
 
-
-func (t *ThreadSafeWriter) WriteJSON (v interface()) error {
+func (t *ThreadSafeWriter) WriteJSON(v interface{}) error {
 	t.Mutex.Lock()
 	defer t.Mutex.Unlock()
 	return t.Conn.WriteJSON(v)
 }
 
-func (p *Peers) AddTrack (t *webrts.TrackRemote) *webrtc.TrackLocalStaticRTP {
+func (p *Peers) AddTrack(t *webrts.TrackRemote) *webrtc.TrackLocalStaticRTP {
 	p.ListLock.Lock()
-	defer func () {
+	defer func() {
 		p.ListLock.Unlock()
 		p.SignalPeerConnection()
 	}()
-	
+
 	trackLocal, err := webrtc.NewTrackLocalStaticRTP(t.Codec().RTPCodecCapability, "video", t.ID(), t.StreamID())
-	
+
 	if err != nil {
 		log.Println(err.Error())
 		return nil
 	}
-	
+
 	p.TrackLocals[t.ID()] = trackLocal
 	return trackLocal
 }
 
-func (p *Peers) RemoveTrack (t *webrtc.TrackLocalStaticRTP) {
+func (p *Peers) RemoveTrack(t *webrtc.TrackLocalStaticRTP) {
 	p.ListLock.Lock()
-	defer func () {
+	defer func() {
 		p.ListLock.Unlock()
 		p.SignalPeerConnection()
 	}()
@@ -64,7 +64,7 @@ func (p *Peers) RemoveTrack (t *webrtc.TrackLocalStaticRTP) {
 	delete(p.TrackLocals, t.ID())
 }
 
-func (p *Peers)SignalPeerConnection() {
+func (p *Peers) SignalPeerConnection() {
 	p.ListLock.Lock()
 	defer func() {
 		p.ListLock.Unlock()
@@ -90,34 +90,35 @@ func (p *Peers)SignalPeerConnection() {
 					if err := p.Connection[i].PeerConnection.RemoveTrack(sender); err != nil {
 						return true
 					}
-			}
-		}
-
-
-		for _, receiver := range p.Connections[i].PeerConnection.GetReceivers() {
-			if receiver.Track() == nil {
-				continue
-			}
-			existingSender[receiver.Track().ID()] = true
-		}
-
-		for trackID := range p.TrackLocals {
-			if _, ok := existingSender[trackID]; !ok {
-				if _, err := p.Connection[i].PeerConnection.AddTrack(p.TrackLocals[trackID]); err != nil {
-					return true
 				}
 			}
+
+			for _, receiver := range p.Connection[i].PeerConnection.GetReceivers() {
+				if receiver.Track() == nil {
+					continue
+				}
+				existingSender[receiver.Track().ID()] = true
+			}
+
+			for trackID := range p.TrackLocals {
+				if _, ok := existingSender[trackID]; !ok {
+					if _, err := p.Connection[i].PeerConnection.AddTrack(p.TrackLocals[trackID]); err != nil {
+						return true
+					}
+				}
+			}
+			return false
 		}
-		return false
+
+		return true
 	}
 }
-
 
 func (p *Peers) DispatchKeyFrame() {
 
 }
 
-type websocketMessage  {
-	Event string `json:"event"`,
-	Data  string `josn: "data"`,
+type websocketMessage struct {
+	Event string `json:"event"`
+	Data  string `json:"data"`
 }
